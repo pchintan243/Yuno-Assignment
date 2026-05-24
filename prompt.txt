@@ -1,0 +1,80 @@
+Build a payment orchestration system in Spring Boot using Maven. Here's what I need:
+
+## Core Requirements
+
+We have two external payment providers: ProviderA handles card payments and ProviderB handles UPI. I need a service that acts as a smart router between them with built-in retry and failover logic.
+
+When a payment request comes in:
+1. Check if an idempotency key was already used — if yes, return the existing payment without re-processing
+2. Route to the right provider based on payment type (CARD → A, UPI → B)
+3. If the provider fails, retry up to 3 times
+4. If all retries fail, switch to the other provider and try again (failover)
+5. Persist the payment state at every step so we have a full audit trail
+
+## API
+
+Three endpoints:
+- POST /payments — create a payment
+- GET /payments/{id} — get a specific payment
+- GET /payments — list all payments with pagination
+
+POST request body:
+```
+{
+  "amount": 100.00,
+  "type": "CARD",  // or "UPI"
+  "idempotencyKey": "order-123"
+}
+```
+
+Response:
+```
+{
+  "paymentId": "uuid",
+  "amount": 100.00,
+  "type": "CARD",
+  "status": "SUCCESS",  // INITIATED, PROCESSING, SUCCESS, FAILED
+  "provider": "ProviderA"
+}
+```
+
+## Error Handling
+
+Return standardized error responses with errorCode and timestamp:
+```
+{
+  "message": "Payment not found",
+  "errorCode": "PAYMENT_NOT_FOUND",
+  "timestamp": "2026-05-24T10:00:00"
+}
+```
+
+Handle: validation errors (400), not found (404), unsupported types (400), and generic errors (500).
+
+## Tech Stack
+
+- Java 21
+- Spring Boot 4
+- Maven
+- Spring Data JPA with H2 in-memory DB
+- Jakarta Bean Validation
+- Spring Boot Actuator for health/metrics
+
+## Testing
+
+Write unit tests for:
+- PaymentOrchestrator: retry logic, failover behavior, status transitions
+- PaymentRoutingService: correct provider selection for each type
+- PaymentService: idempotency, 404 handling, data consistency
+- GlobalExceptionHandler: all error mappings
+- Controller tests for happy paths and validation failures
+
+## Additional Things I Need
+
+- README with architecture diagram and how to run
+- Non-functional requirements document
+- Performance metrics document (what we're measuring)
+- Development prompts history (for documentation purposes)
+- All source files properly documented with comments
+
+Make the code clean, production-quality, and something I'd be confident putting on my portfolio.
